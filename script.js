@@ -167,10 +167,17 @@ document.addEventListener("DOMContentLoaded", () => {
     showScreen(screens.accessibility)
   }
 
-  function showConfirmationScreen() {
-    showScreen(screens.confirmation)
-    setTimeout(showVotingScreen, 3000)
-  }
+  function showConfirmationScreen(time, signature) {
+  const confirmationElement = document.getElementById("confirmationScreen")
+  confirmationElement.innerHTML = `
+    <p>Voto confirmado com sucesso!</p>
+    <p>Hora da apuração: ${time}</p>
+    <p><em>${signature}</em></p>
+    <p>Obrigado por votar!</p>
+  `
+  confirmationElement.style.display = "block"
+}
+
 
   // Funções de administrador
   function loginAdmin() {
@@ -612,36 +619,44 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  function confirmVote() {
-    if (currentVoteNumber === "") {
-      if (voiceAssistantActive) {
-        speak("Por favor, digite um número ou escolha voto em branco")
-      }
-      return
-    }
-
-    // Registrar o voto
-    const votes = JSON.parse(localStorage.getItem("votes"))
-
-    if (currentVoteNumber === "branco") {
-      votes["branco"] = (votes["branco"] || 0) + 1
-    } else {
-      const candidates = JSON.parse(localStorage.getItem("candidates"))
-      const candidate = candidates.find((c) => c.number === currentVoteNumber)
-
-      if (candidate) {
-        votes[currentVoteNumber] = (votes[currentVoteNumber] || 0) + 1
-      } else {
-        votes["nulo"] = (votes["nulo"] || 0) + 1
-      }
-    }
-
-    localStorage.setItem("votes", JSON.stringify(votes))
-
+function confirmVote() {
+  if (currentVoteNumber === "") {
     if (voiceAssistantActive) {
-      speak("Voto confirmado")
+      speak("Por favor, digite um número ou escolha voto em branco")
     }
-
-    showConfirmationScreen()
+    return
   }
+
+  // Registrar o voto
+  const votes = JSON.parse(localStorage.getItem("votes")) || {}
+
+  if (currentVoteNumber === "branco") {
+    votes["branco"] = (votes["branco"] || 0) + 1
+  } else {
+    const candidates = JSON.parse(localStorage.getItem("candidates")) || []
+    const candidate = candidates.find((c) => c.number === currentVoteNumber)
+
+    if (candidate) {
+      votes[currentVoteNumber] = (votes[currentVoteNumber] || 0) + 1
+    } else {
+      votes["nulo"] = (votes["nulo"] || 0) + 1
+    }
+  }
+
+  localStorage.setItem("votes", JSON.stringify(votes))
+
+  // Captura a hora local da apuração
+  const apuracaoHora = new Date().toLocaleTimeString()
+
+  if (voiceAssistantActive) {
+    speak("Voto confirmado")
+  }
+
+  // Exibir a tela de confirmação com hora e assinatura fictícia do TSE
+  showConfirmationScreen(apuracaoHora, "Assinado digitalmente pelo TSE")
+
+  // Para debug, pode logar no console também:
+  console.log(`Voto confirmado às ${apuracaoHora}`)
+  console.log("Assinado digitalmente pelo TSE")
+}
 })
